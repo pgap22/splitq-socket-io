@@ -37,7 +37,9 @@ io.on('connection', (socket) => {
                     balance: true
                 }
             })
-            socket.to(id).emit("current_balance",balance)
+            io.to(id).emit("current_balance",{
+                balance
+            })
         } catch (error) {
             console.log(error)
         }
@@ -51,4 +53,7 @@ io.on('connection', (socket) => {
         socket.to(data.room).emit("recive_recharge", data.recharge)
         socket.to(data.room).emit("add_balance", data)
     })
+    socket.on('error', function (err) {
+        console.log(err);
+    });
 });
