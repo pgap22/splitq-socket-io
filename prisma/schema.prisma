@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CartUserProducts {
+  id             String    @id
+  id_user        String
+  id_product     String?
+  quantity       Int
+  id_combo       String?
+  ticket_qr      String
+  enableToBuy    Boolean   @default(true)
+  ticket_enabled Boolean   @default(false)
+  ticket_redeem  Boolean   @default(false)
+  claimedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  purchaseAt     DateTime?
+  Combo          Combo?    @relation(fields: [id_combo], references: [id], onDelete: Cascade)
+  Products       Products? @relation(fields: [id_product], references: [id], onDelete: Cascade)
+  Users          Users     @relation(fields: [id_user], references: [id], onDelete: Cascade)
+}
+
+model Categories {
+  id       String     @id
+  name     String
+  Products Products[]
+}
+
+model Combo {
+  id               String             @id
+  name             String
+  description      String
+  price            Float
+  id_seller        String
+  CartUserProducts CartUserProducts[]
+  Users            Users              @relation(fields: [id_seller], references: [id], onDelete: Cascade)
+  ComboProducts    ComboProducts[]
+}
+
+model ComboProducts {
+  id         String   @id
+  id_product String
+  quantity   Int
+  id_combo   String
+  Combo      Combo    @relation(fields: [id_combo], references: [id], onDelete: Cascade)
+  Products   Products @relation(fields: [id_product], references: [id], onDelete: Cascade)
+}
+
+model ProductImages {
+  id         String   @id
+  id_product String
+  url        String
+  public_id  String   @default("")
+  Products   Products @relation(fields: [id_product], references: [id], onDelete: Cascade)
+}
+
+model Products {
+  id               String             @id
+  name             String
+  price            Float
+  description      String
+  categorieID      String
+  seller_id        String
+  CartUserProducts CartUserProducts[]
+  ComboProducts    ComboProducts[]
+  ProductImages    ProductImages[]
+  Categories       Categories         @relation(fields: [categorieID], references: [id], onDelete: Cascade)
+  Users            Users              @relation(fields: [seller_id], references: [id])
+}
+
+model Recharges {
+  id                            String   @id
+  userID                        String
+  modID                         String
+  balance                       Float
+  createdAt                     DateTime @default(now())
+  Users_Recharges_modIDToUsers  Users    @relation("Recharges_modIDToUsers", fields: [modID], references: [id], onDelete: Cascade)
+  Users_Recharges_userIDToUsers Users    @relation("Recharges_userIDToUsers", fields: [userID], references: [id], onDelete: Cascade)
+}
+
+model UserRefoundBalance {
+  id                                      String            @id
+  status                                  UserRefoundStatus @default(pending)
+  refoundBalance                          Float
+  reason                                  String
+  id_user                                 String
+  id_mod                                  String?
+  checkedAt                               DateTime?
+  createdAt                               DateTime          @default(now())
+  Users_UserRefoundBalance_id_modToUsers  Users?            @relation("UserRefoundBalance_id_modToUsers", fields: [id_mod], references: [id], onDelete: Cascade)
+  Users_UserRefoundBalance_id_userToUsers Users             @relation("UserRefoundBalance_id_userToUsers", fields: [id_user], references: [id], onDelete: Cascade)
+}
+
+model Users {
+  id                                                   String               @id
+  name                                                 String
+  lastname                                             String?
+  email                                                String
+  password                                             String
+  role                                                 String               @default("user")
+  balance                                              Float?               @default(0.00)
+  token                                                String?
+  emailToken                                           String?
+  updatableEmail                                       String?
+  passToken                                            String?
+  freezebalance                                        Float?               @default(0.00)
+  CartUserProducts                                     CartUserProducts[]
+  Combo                                                Combo[]
+  Products                                             Products[]
+  Recharges_Recharges_modIDToUsers                     Recharges[]          @relation("Recharges_modIDToUsers")
+  Recharges_Recharges_userIDToUsers                    Recharges[]          @relation("Recharges_userIDToUsers")
+  UserRefoundBalance_UserRefoundBalance_id_modToUsers  UserRefoundBalance[] @relation("UserRefoundBalance_id_modToUsers")
+  UserRefoundBalance_UserRefoundBalance_id_userToUsers UserRefoundBalance[] @relation("UserRefoundBalance_id_userToUsers")
+}
+
+enum UserRefoundStatus {
+  pending
+  accepted
+  denied
+  canceled
+}
