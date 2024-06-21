@@ -13,8 +13,14 @@ const io = new Server(server, {cors:{
     origin: "*"
 }})
 
-app.get("/", (req,res)=>{
-    return res.send("splitq socket io")
+app.get("/", async (req,res)=>{
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        return res.json({ok: 1})
+    } catch (error) {
+        console.log(error)
+        return res.json({error: 0})
+    }
 })
 
 
@@ -43,6 +49,20 @@ io.on('connection', (socket) => {
         } catch (error) {
             console.log(error)
         }
+    })
+
+    socket.on("update_balance", async (id)=>{
+        const { balance } = await prisma.users.findFirst({
+            where: {
+                id
+            },
+            select: {
+                balance: true
+            }
+        })
+        io.to(id).emit("current_balance",{
+            balance
+        })
     })
 
     socket.on("user_data", (id)=>{
