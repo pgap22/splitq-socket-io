@@ -7,115 +7,110 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model CartUserProducts {
-  id             String    @id
-  id_user        String
-  id_product     String?
-  quantity       Int
-  id_combo       String?
-  ticket_qr      String
-  enableToBuy    Boolean   @default(true)
-  ticket_enabled Boolean   @default(false)
-  ticket_redeem  Boolean   @default(false)
-  claimedAt      DateTime?
-  createdAt      DateTime  @default(now())
-  purchaseAt     DateTime?
-  Combo          Combo?    @relation(fields: [id_combo], references: [id], onDelete: Cascade)
-  Products       Products? @relation(fields: [id_product], references: [id], onDelete: Cascade)
-  Users          Users     @relation(fields: [id_user], references: [id], onDelete: Cascade)
+model Users {
+  id              String             @id @default(uuid())
+  name            String
+  lastname        String?
+  email           String
+  password        String
+  role            String             @default("user")
+  balance         Float?             @default(0.00)
+  freezebalance   Float?             @default(0.00)
+  token           String?
+  emailToken      String?
+  updatableEmail  String?
+  passToken       String?
+  cart            CartUserProducts[]
+  createdCombo    Combo[]
+  createdProducts Products[]
+  ModRecharges    Recharges[]        @relation("mod")
+  userRecharges   Recharges[]        @relation("user")
+
+  refoundBalance UserRefoundBalance[] @relation("user")
+  refoundsAsMod  UserRefoundBalance[] @relation("mod")
 }
 
 model Categories {
-  id       String     @id
-  name     String
-  Products Products[]
+  id        String     @id @default(uuid())
+  name      String
+  productos Products[]
+}
+
+model Products {
+  id          String             @id @default(uuid())
+  name        String
+  price       Float
+  description String
+  categorieID String
+  seller_id   String
+  usersCarts  CartUserProducts[]
+  combo       ComboProducts[]
+  images      ProductImages[]
+  categorie   Categories         @relation(fields: [categorieID], references: [id], onDelete: Cascade)
+  seller      Users              @relation(fields: [seller_id], references: [id])
+}
+
+model ProductImages {
+  id         String   @id @default(uuid())
+  id_product String
+  url        String
+  public_id  String   @default("")
+  product    Products @relation(fields: [id_product], references: [id], onDelete: Cascade)
 }
 
 model Combo {
-  id               String             @id
+  id               String             @id @default(uuid())
   name             String
   description      String
   price            Float
   id_seller        String
+  seller           Users              @relation(fields: [id_seller], references: [id], onDelete: Cascade)
+  products         ComboProducts[]
   CartUserProducts CartUserProducts[]
-  Users            Users              @relation(fields: [id_seller], references: [id], onDelete: Cascade)
-  ComboProducts    ComboProducts[]
 }
 
 model ComboProducts {
-  id         String   @id
+  id         String   @id @default(uuid())
   id_product String
-  quantity   Int
   id_combo   String
-  Combo      Combo    @relation(fields: [id_combo], references: [id], onDelete: Cascade)
-  Products   Products @relation(fields: [id_product], references: [id], onDelete: Cascade)
-}
-
-model ProductImages {
-  id         String   @id
-  id_product String
-  url        String
-  public_id  String   @default("")
-  Products   Products @relation(fields: [id_product], references: [id], onDelete: Cascade)
-}
-
-model Products {
-  id               String             @id
-  name             String
-  price            Float
-  description      String
-  categorieID      String
-  seller_id        String
-  CartUserProducts CartUserProducts[]
-  ComboProducts    ComboProducts[]
-  ProductImages    ProductImages[]
-  Categories       Categories         @relation(fields: [categorieID], references: [id], onDelete: Cascade)
-  Users            Users              @relation(fields: [seller_id], references: [id])
+  quantity   Int
+  combo      Combo    @relation(fields: [id_combo], references: [id], onDelete: Cascade)
+  product    Products @relation(fields: [id_product], references: [id], onDelete: Cascade)
 }
 
 model Recharges {
-  id                            String   @id
-  userID                        String
-  modID                         String
-  balance                       Float
-  createdAt                     DateTime @default(now())
-  Users_Recharges_modIDToUsers  Users    @relation("Recharges_modIDToUsers", fields: [modID], references: [id], onDelete: Cascade)
-  Users_Recharges_userIDToUsers Users    @relation("Recharges_userIDToUsers", fields: [userID], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  userID    String
+  modID     String
+  balance   Float
+  createdAt DateTime @default(now())
+  mod       Users    @relation("mod", fields: [modID], references: [id], onDelete: Cascade)
+  user      Users    @relation("user", fields: [userID], references: [id], onDelete: Cascade)
 }
 
-model UserRefoundBalance {
-  id                                      String            @id
-  status                                  UserRefoundStatus @default(pending)
-  refoundBalance                          Float
-  reason                                  String
-  id_user                                 String
-  id_mod                                  String?
-  checkedAt                               DateTime?
-  createdAt                               DateTime          @default(now())
-  Users_UserRefoundBalance_id_modToUsers  Users?            @relation("UserRefoundBalance_id_modToUsers", fields: [id_mod], references: [id], onDelete: Cascade)
-  Users_UserRefoundBalance_id_userToUsers Users             @relation("UserRefoundBalance_id_userToUsers", fields: [id_user], references: [id], onDelete: Cascade)
-}
+model CartUserProducts {
+  id          String  @id @default(uuid())
+  id_user     String
+  id_product  String?
+  id_combo    String?
+  //It can be disabled on cart //TODO
+  enableToBuy Boolean @default(true)
 
-model Users {
-  id                                                   String               @id
-  name                                                 String
-  lastname                                             String?
-  email                                                String
-  password                                             String
-  role                                                 String               @default("user")
-  balance                                              Float?               @default(0.00)
-  token                                                String?
-  emailToken                                           String?
-  updatableEmail                                       String?
-  passToken                                            String?
-  freezebalance                                        Float?               @default(0.00)
-  CartUserProducts                                     CartUserProducts[]
-  Combo                                                Combo[]
-  Products                                             Products[]
-  Recharges_Recharges_modIDToUsers                     Recharges[]          @relation("Recharges_modIDToUsers")
-  Recharges_Recharges_userIDToUsers                    Recharges[]          @relation("Recharges_userIDToUsers")
-  UserRefoundBalance_UserRefoundBalance_id_modToUsers  UserRefoundBalance[] @relation("UserRefoundBalance_id_modToUsers")
-  UserRefoundBalance_UserRefoundBalance_id_userToUsers UserRefoundBalance[] @relation("UserRefoundBalance_id_userToUsers")
+  ticket_qr      String @default(uuid())
+
+  //If this is true it means that some one bought it 
+  ticket_enabled Boolean @default(false)
+  
+  //If it is true has been claimed
+  ticket_redeem Boolean @default(false)
+
+  claimedAt DateTime?
+  purchaseAt DateTime?
+  createdAt DateTime @default(now())
+  quantity Int
+  product  Products? @relation(fields: [id_product], references: [id], onDelete: Cascade)
+  combo    Combo?    @relation(fields: [id_combo], references: [id], onDelete: Cascade)
+  user     Users     @relation(fields: [id_user], references: [id], onDelete: Cascade)
 }
 
 enum UserRefoundStatus {
@@ -123,4 +118,22 @@ enum UserRefoundStatus {
   accepted
   denied
   canceled
+}
+
+model UserRefoundBalance {
+  id             String            @id @default(uuid())
+  status         UserRefoundStatus @default(pending)
+  refoundBalance Float
+  reason         String
+  id_user        String
+
+  //Who give refound/money
+  id_mod String?
+
+  createdAt DateTime @default(now())
+  checkedAt DateTime?
+
+
+  mod  Users? @relation("mod", fields: [id_mod], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user Users  @relation("user", fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
