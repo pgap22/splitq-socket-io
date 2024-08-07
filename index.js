@@ -48,6 +48,7 @@ server.listen("4000", () => {
 io.on('connection', (socket) => {
     logTime("Connected:" + socket.handshake.address)
 
+    //SPLITQ
     socket.on("get_balance", async (id) => {
         try {
             socket.join(id)
@@ -97,7 +98,6 @@ io.on('connection', (socket) => {
             balance
         })
     })
-
     socket.on("user_data", (id) => {
         logTime("ROOM: " + id + " " + socket.handshake.address)
         socket.join(id)
@@ -106,29 +106,31 @@ io.on('connection', (socket) => {
         socket.to(data.room).emit("recive_recharge", data.recharge)
         socket.to(data.room).emit("add_balance", data)
     })
-
     socket.on("ticket-room", data => {
         console.log(data)
         socket.join(data + "-ticket")
     })
-
     socket.on("ticket-redeem", data => {
         console.log(data)
         io.to(data.room + "-ticket").emit("ticket-completed", data.tickets)
     })
-
     socket.on("send-room", data => {
         socket.join(data.room)
     })
-
     socket.on("ticket-individual", data => {
         io.to(data.room).emit("ticket-individual-completed", data.ticket)
     })
 
-
+    //SplitPay
+    socket.on("splitpay-auth", data=>{
+        console.log(data)
+        io.emit("splitpay-deposit", data)
+    })
+    
 
     socket.on('error', function (err) {
         console.log(err);
     });
 
+    socket.on('disconnect', e=> console.log("disconnect"))
 });
