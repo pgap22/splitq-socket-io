@@ -127,7 +127,16 @@ io.on('connection', (socket) => {
         io.emit("splitpay-deposit", data)
     })
     
-
+    socket.on("splitpay-disconnect", data=>{
+            console.log("wdawdawdad")
+        io.emit("splitpay-destroy-sessions", "")
+    })
+    
+    socket.on('splitpay-value-deposit', data=>{
+        console.log(data)
+        io.emit("splitpay-amount", data)
+    })
+    
     socket.on('error', function (err) {
         console.log(err);
     });
